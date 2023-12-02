@@ -315,7 +315,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in {Conv, Conv_suppression, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, SPPCSPC, SPPFCSPC, DWConv, MixConv2d, Focus, CrossConv,
-                 BottleneckCSP, C2, C3, C3x, C3s, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, BasicRFB, C3SATT, C3CA}: # CBAMBottleneck, C3CBAM
+                 BottleneckCSP, C2, C3, C3x, C3s, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, RFB, C3SATT, C3CA}: # CBAMBottleneck, C3CBAM
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
