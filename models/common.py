@@ -413,10 +413,10 @@ class BasicConv(nn.Module):
         return x
 
 
-class BasicRFB(nn.Module):
+class RFB(nn.Module):
 
     def __init__(self, in_planes, out_planes, stride=1, scale=0.1, map_reduce=8, vision=1, groups=1):
-        super(BasicRFB, self).__init__()
+        super(RFB, self).__init__()
         self.scale = scale
         self.out_channels = out_planes
         inter_planes = in_planes // map_reduce
