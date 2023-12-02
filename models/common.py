@@ -60,7 +60,7 @@ class Conv(nn.Module):
         return self.act(self.conv(x))
 
 
-class Conv_suppression(nn.Module):
+class Conv_s(nn.Module):
     # Standard convolution with args(ch_in, ch_out, kernel, stride, padding, groups, dilation, activation)
     default_act = nn.SiLU()  # default activation
 
