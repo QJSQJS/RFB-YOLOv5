@@ -59,42 +59,48 @@ class Conv(nn.Module):
     def forward_fuse(self, x):
         return self.act(self.conv(x))
 
+class FeatureEnhancement(nn.Module):
+    def __init__(self, channels, alpha=1.0, mu=1e-6):
+        super(FeatureEnhancement, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.alpha = alpha
+        self.mu = mu
 
-class Conv_s(nn.Module):
+    def forward(self, x):
+        F_0 = x
+        F_1 = self.avg_pool(F_0)
+        F_1 = F_1.expand_as(F_0)  # 将F_1扩展至F_0的大小
+
+        diff = torch.abs(F_0 - F_1)
+        enhanced = F_0 + (self.alpha * diff / (1 + diff)) * (F_0 - F_1) / (torch.abs(F_0 - F_1) + self.mu)
+        return enhanced
+
+class Conv_E(nn.Module):
     # Standard convolution with args(ch_in, ch_out, kernel, stride, padding, groups, dilation, activation)
     default_act = nn.SiLU()  # default activation
 
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True, enhance=True, alpha=1.0, mu=1e-6):
         super().__init__()
-        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p, d), groups=g, dilation=d, bias=False)
+        self.conv = nn.Conv2d(c1, c2, k, s, self.autopad(k, p, d), groups=g, dilation=d, bias=False)
         self.bn = nn.BatchNorm2d(c2)
         self.act = self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity()
+        self.enhance = enhance
+        if self.enhance:
+            self.feature_enhancement = FeatureEnhancement(c2, alpha, mu)
+
+    def autopad(self, k, p, d):
+        # Calculate padding based on kernel size and dilation
+        if p is None:
+            p = ((k - 1) * d) // 2
+        return p
 
     def forward(self, x):
-        # 卷积层
         x = self.conv(x)
-        # 批归一化层
-        if self.bn is not None:
-            x = self.bn(x)
-        # 激活函数
-        if self.act is not None:
-            x = self.act(x)
-        #全局平均池化层
-        pool = nn.AdaptiveAvgPool2d(1)(x)
-        # 抑制函数
-        diff = torch.abs(x - pool)
+        x = self.bn(x)
+        if self.enhance:
+            x = self.feature_enhancement(x)
+        return self.act(x)
 
-        alpha = 1
-        mu = 0.000001
-        # smooth_diff = alpha * (
-        #             (torch.exp(diff + A) + torch.exp(-diff - A)) / (torch.exp(diff + A) - torch.exp(-diff - A)) - B)
-
-        smooth_diff = alpha * (diff / (1 + diff))
-
-        suppress = torch.abs(x - pool) / (torch.abs(x - pool) + mu) * smooth_diff
-        # 输出特征图
-        x = x + suppress
-        return x
 
 class DWConv(Conv):
     # Depth-wise convolution
