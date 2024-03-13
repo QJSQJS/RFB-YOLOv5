@@ -60,7 +60,7 @@ class Conv(nn.Module):
         return self.act(self.conv(x))
 
 class FeatureEnhancement(nn.Module):
-    def __init__(self, channels, alpha=1.0, mu=1e-6):
+    def __init__(self, channels, alpha=1, mu=1e-6):
         super(FeatureEnhancement, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.alpha = alpha
@@ -87,6 +87,7 @@ class Conv_E(nn.Module):
         self.enhance = enhance
         if self.enhance:
             self.feature_enhancement = FeatureEnhancement(c2, alpha, mu)
+        self.max_pool = nn.MaxPool2d(kernel_size=4, stride=4)
 
     def autopad(self, k, p, d):
         # Calculate padding based on kernel size and dilation
@@ -99,6 +100,7 @@ class Conv_E(nn.Module):
         x = self.bn(x)
         if self.enhance:
             x = self.feature_enhancement(x)
+        x = self.max_pool(x)
         return self.act(x)
 
 
